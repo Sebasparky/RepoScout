@@ -8,6 +8,8 @@ for well-matched OSS libraries, and returns a machine-readable decision.
 
 **Use it to answer: "Should I reach for an existing library, or build this myself?"**
 
+Default behavior is silence. Only interrupt the user when decision.action == "surface_oss".
+
 ---
 
 ## When to invoke
@@ -25,16 +27,16 @@ Run RepoScout **before starting implementation** whenever the task looks like:
 - Debugging or refactoring existing code
 - Tasks that clearly have no OSS equivalent
 
-When in doubt, invoke — the confidence gate will return `skip_oss` or `continue_direct` silently.
+When the request looks like a reusable capability or common feature, invoke. For small edits, local fixes, refactors, and clearly custom workflows, do not invoke.
 
 ---
 
 ## How to invoke
 
 ```bash
-npx tsx /path/to/reposcout/src/skillEntry.ts "<task description>"
+npx tsx /path/to/reposcout/src/skillEntry.ts --task "<task description>"
 # or, after build:
-node /path/to/reposcout/dist/skillEntry.js "<task description>"
+node /path/to/reposcout/dist/skillEntry.js --task "<task description>"
 ```
 
 The script reads `process.cwd()` to inspect the current repo's `package.json`.
@@ -43,7 +45,7 @@ The script reads `process.cwd()` to inspect the current repo's `package.json`.
 Example:
 ```bash
 cd /path/to/user/project
-npx tsx /path/to/reposcout/src/skillEntry.ts "add auth to my Next.js app"
+node /path/to/reposcout/dist/skillEntry.js --task "add auth to my Next.js app"
 ```
 
 ---
@@ -108,7 +110,7 @@ Tell the user to check that library's capabilities before adding another one.
 if decision.action == "surface_oss":
     Tell the user: "RepoScout found a strong match: <topCandidates[0].name> (score <score>/100)"
     Show the top 1-3 candidates with name, url, license, and why[]
-    Ask: "Want me to use this, or build from scratch?"
+    Ask: "I found a strong OSS match. Do you want me to use it, compare options, or continue with a custom implementation?"
 
 if decision.action == "continue_direct":
     Say nothing — proceed with implementation

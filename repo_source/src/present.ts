@@ -159,6 +159,20 @@ function presentDecision(analysis: RequestAnalysis, decision: Decision): string[
 // ── Main presenter ────────────────────────────────────────────────────────────
 
 export function present(result: RepoScoutResult): void {
+  const prefix = `${c.cyan}${c.bold}RepoScout:${c.reset}`;
+
+  // Compact path — OSS skipped or no strong match. Avoid showing an empty/noisy panel.
+  if (result.decision.action === "skip_oss") {
+    console.log(`\n  ${prefix} OSS search skipped — ${c.dim}${result.decision.rationale}${c.reset} Continuing with direct implementation.\n`);
+    return;
+  }
+  if (!result.recommendation) {
+    console.log(`\n  ${prefix} ${c.dim}No strong OSS match found — continuing with direct implementation.${c.reset}\n`);
+    return;
+  }
+
+  // Full panel — strong match found.
+  const rec = result.recommendation;
   const out: string[] = [];
 
   out.push("\n" + header("  RepoScout — Build vs Borrow Analysis  "));
@@ -166,23 +180,9 @@ export function present(result: RepoScoutResult): void {
   out.push(section("Task"));
   out.push(`  ${c.white}"${result.task}"${c.reset}`);
 
-  // Repo context (only when a package.json was found)
   out.push(...presentRepoContext(result.repoContext));
-
-  // Decision rationale (new — replaces the old Classification section for clarity)
   out.push(...presentDecision(result.requestAnalysis, result.decision));
 
-  // For skip_oss: show the skip verdict and stop — no point showing empty results.
-  if (result.decision.action === "skip_oss") {
-    out.push(section("Recommendation"));
-    out.push(`  ${c.yellow}${c.bold}⚠ BUILD / EDIT DIRECTLY${c.reset}`);
-    out.push(`  ${c.dim}${result.tradeoffSummary}${c.reset}`);
-    out.push(`\n  ${c.dim}${line()}${c.reset}\n`);
-    console.log(out.join("\n"));
-    return;
-  }
-
-  // Legacy classification row (compact, below decision)
   if (result.classification.category !== "unknown") {
     out.push(`\n  ${c.dim}Category:${c.reset} ${c.cyan}${result.classification.category}${c.reset}`);
   }
@@ -192,41 +192,22 @@ export function present(result: RepoScoutResult): void {
     out.push(`  ${c.dim}${i + 1}.${c.reset} ${q}`);
   });
 
-  const top3 = result.ranked.slice(0, 3);
-
   out.push(section(`Top Candidates  (${result.candidates.length} retrieved, showing top 3)`));
-  if (top3.length === 0) {
-    out.push(`  ${c.dim}No candidates found.${c.reset}`);
-  } else {
-    top3.forEach((cand, i) => {
-      out.push(candidateBlock(i + 1, cand, cand.scoreBreakdown));
-    });
-  }
+  result.ranked.slice(0, 3).forEach((cand, i) => {
+    out.push(candidateBlock(i + 1, cand, cand.scoreBreakdown));
+  });
 
   out.push(section("Recommendation"));
-
-  if (result.recommendation) {
-    const rec = result.recommendation;
-    out.push(
-      `  ${c.green}${c.bold}✓ USE OSS:${c.reset} ${c.white}${c.bold}${rec.name}${c.reset}  ${c.dim}(score ${rec.score}/100)${c.reset}`
-    );
-    out.push(`\n  ${c.bold}Why:${c.reset}`);
-    const lines = rec.explanation.split(" · ");
-    lines.forEach((l) => out.push(`   ${c.dim}•${c.reset} ${l}`));
-  } else {
-    out.push(
-      `  ${c.yellow}${c.bold}⚠ BUILD FROM SCRATCH${c.reset}  ${c.dim}— no strong OSS candidate found${c.reset}`
-    );
-  }
+  out.push(
+    `  ${c.green}${c.bold}✓ USE OSS:${c.reset} ${c.white}${c.bold}${rec.name}${c.reset}  ${c.dim}(score ${rec.score}/100)${c.reset}`
+  );
+  out.push(`\n  ${c.bold}Why:${c.reset}`);
+  rec.explanation.split(" · ").forEach((l) => out.push(`   ${c.dim}•${c.reset} ${l}`));
 
   out.push(`\n  ${c.bold}Tradeoff summary:${c.reset}`);
   out.push(`  ${c.dim}${result.tradeoffSummary}${c.reset}`);
 
-  const scratchVerdict = result.buildFromScratch
-    ? `${c.yellow}Yes — worth considering${c.reset}`
-    : `${c.green}No — OSS covers the core need${c.reset}`;
-  out.push(`\n  ${c.bold}Build from scratch?${c.reset}  ${scratchVerdict}`);
-
+  out.push(`\n  ${c.bold}Build from scratch?${c.reset}  ${c.green}No — OSS covers the core need${c.reset}`);
   out.push(`\n  ${c.dim}${line()}${c.reset}\n`);
 
   console.log(out.join("\n"));

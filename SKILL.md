@@ -33,20 +33,10 @@ When the request looks like a reusable capability or common feature, invoke. For
 
 ## How to invoke
 
-```bash
-npx tsx /path/to/reposcout/src/skillEntry.ts --task "<task description>"
-# or, after build:
-node /path/to/reposcout/dist/skillEntry.js --task "<task description>"
-```
+Run:
 
-The script reads `process.cwd()` to inspect the current repo's `package.json`.
-**Always run from the user's project directory**, not the RepoScout directory.
-
-Example:
 ```bash
-cd /path/to/user/project
-node /path/to/reposcout/dist/skillEntry.js --task "add auth to my Next.js app"
-```
+!`${CLAUDE_SKILL_DIR}/scripts/run_reposcout.sh "$ARGUMENTS"`
 
 ---
 

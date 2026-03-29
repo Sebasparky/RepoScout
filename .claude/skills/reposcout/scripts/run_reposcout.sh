@@ -7,7 +7,8 @@ if [ -z "$TASK" ]; then
   exit 1
 fi
 
-ROOT="$(cd "${CLAUDE_SKILL_DIR}/../../../" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "${SCRIPT_DIR}/../../../../" && pwd)"
 cd "$ROOT"
 
 node dist/skillEntry.js --task "$TASK"

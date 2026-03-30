@@ -44,17 +44,22 @@ async function main(): Promise<void> {
       action = "continue_direct";
     }
 
+    // Normalise a ranked candidate into a stable output shape.
+    // Fields are always present in the same order; missing values use null.
+    const normalizeCandidate = (c: (typeof result.ranked)[number]) => ({
+      name: c.name,
+      githubUrl: c.source === "github" ? c.url : null,
+      npmUrl: c.source === "npm" ? c.url : (c.npmUrl ?? null),
+      score: c.score,
+      license: c.license ?? null,
+      stars: c.stars ?? null,
+      why: c.explanation.split(" · ").slice(0, 3),
+    });
+
     // Top candidates — only populated when surfacing a strong match
     const topCandidates =
       action === "surface_oss"
-        ? result.ranked.slice(0, 3).map((c) => ({
-            name: c.name,
-            url: c.url,
-            score: c.score,
-            license: c.license ?? null,
-            stars: c.stars ?? null,
-            why: c.explanation.split(" · ").slice(0, 3),
-          }))
+        ? result.ranked.slice(0, 3).map(normalizeCandidate)
         : [];
 
     const output = {
@@ -65,15 +70,15 @@ async function main(): Promise<void> {
         featureTerms: result.requestAnalysis.featureTerms,
         likelySolvableByOss: result.requestAnalysis.likelySolvableByOss,
       },
-      repoContext: result.repoContext.inspected
-        ? {
-            language: result.repoContext.language,
-            framework: result.repoContext.framework,
-            packageManager: result.repoContext.packageManager,
-            uiStack: result.repoContext.uiStack,
-            authSignals: result.repoContext.authSignals,
-          }
-        : null,
+      // repoContext is always an object with the same fields.
+      // When no package.json was found, all values are their "unknown"/empty defaults.
+      repoContext: {
+        language: result.repoContext.language,
+        framework: result.repoContext.framework,
+        packageManager: result.repoContext.packageManager,
+        uiStack: result.repoContext.uiStack,
+        authSignals: result.repoContext.authSignals,
+      },
       decision: {
         action,
         reason: result.decision.rationale,

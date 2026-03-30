@@ -57,6 +57,7 @@ export type Candidate = {
   source: "github" | "npm";
   name: string;
   url: string;
+  npmUrl?: string;         // populated on GitHub candidates merged with an npm match
   description?: string;
   language?: string;
   license?: string;

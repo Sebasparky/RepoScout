@@ -69,7 +69,8 @@ The skill returns a single JSON object to stdout. Stderr is reserved for errors.
   "topCandidates": [
     {
       "name": "nextauthjs/next-auth",
-      "url": "https://github.com/nextauthjs/next-auth",
+      "githubUrl": "https://github.com/nextauthjs/next-auth",
+      "npmUrl": "https://www.npmjs.com/package/next-auth",
       "score": 91,
       "license": "ISC",
       "stars": 24000,
@@ -96,21 +97,14 @@ Tell the user to check that library's capabilities before adding another one.
 
 ## How to use the result
 
-```
-if decision.action == "surface_oss":
-    Tell the user: "RepoScout found a strong match: <topCandidates[0].name> (score <score>/100)"
-    Show the top 1-3 candidates with name, url, license, and why[]
-    Ask: "I found a strong OSS match. Do you want me to use it, compare options, or continue with a custom implementation?"
+Use stable response templates with minimal wording variation.
 
-if decision.action == "continue_direct":
-    Say nothing — proceed with implementation
+**`surface_oss`** — Only surface when confidence is high and `decision.action == "surface_oss"`.
+Show a short lead sentence, then the top 1–3 candidates. For each candidate include: name, githubUrl, npmUrl, license, stars, and the available why reasons. Close with a short next-step question asking whether to use it, compare options, or continue with a custom implementation.
 
-if decision.action == "skip_oss":
-    If alreadyHave is set: mention it once
-    Otherwise: say nothing — proceed with implementation
-```
+**`continue_direct`** — Say nothing; proceed with implementation.
 
-**Only surface results when confidence is high.** Do not show partial or noisy matches.
+**`skip_oss`** — If `alreadyHave` is non-null, mention it briefly once. Otherwise say nothing and proceed.
 
 ---
 

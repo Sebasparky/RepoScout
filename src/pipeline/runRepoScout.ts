@@ -145,35 +145,26 @@ function buildTradeoffSummary(
   hasRecommendation: boolean
 ): string {
   if (top3.length === 0) {
-    return "No OSS candidates were found. Building from scratch gives full control but requires more effort.";
+    return "No OSS candidates found. Building from scratch gives full control.";
   }
 
   const best = top3[0];
-  const lines: string[] = [];
+  const license = best.license ?? "unknown";
+  const stars = best.stars !== undefined ? formatNum(best.stars) : "—";
 
   if (hasRecommendation) {
-    lines.push(
+    return (
       `${best.name} is the strongest match (${best.score}/100). ` +
-      `It covers the core requirements and reduces time-to-working-code.`
+      `License: ${license}. Stars: ${stars}. ` +
+      `Adds a dependency; API may require adaptation to your use case.`
     );
-    if (best.license && ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC"].includes(best.license)) {
-      lines.push(`License (${best.license}) is commercially permissive — safe to use.`);
-    }
-    if (best.stars && best.stars > 1000) {
-      lines.push(`Community adoption is strong (${formatNum(best.stars)} stars), indicating long-term viability.`);
-    }
-    lines.push(
-      `Trade-off: OSS integration adds a dependency and may require adapting the API to your exact use case.`
-    );
-  } else {
-    lines.push(
-      `Top candidate ${best.name} scored ${best.score}/100 — below the recommendation threshold. ` +
-      `It may partially cover the use case but would require significant customization.`
-    );
-    lines.push(`Building from scratch gives full control over behavior and API surface.`);
   }
 
-  return lines.join(" ");
+  return (
+    `Top candidate ${best.name} scored ${best.score}/100 — below the recommendation threshold. ` +
+    `License: ${license}. Stars: ${stars}. ` +
+    `Building from scratch gives full control over behavior and API surface.`
+  );
 }
 
 function formatNum(n: number): string {

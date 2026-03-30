@@ -126,7 +126,7 @@ export function deduplicateAcrossSources(candidates: Candidate[]): Candidate[] {
       if (npmMatch) {
         // Merge npm downloads into the github entry
         consumedNpm.add(npmMatch.name.toLowerCase());
-        result.push({ ...c, downloads: npmMatch.downloads });
+        result.push({ ...c, downloads: npmMatch.downloads, npmUrl: npmMatch.url });
       } else {
         result.push(c);
       }

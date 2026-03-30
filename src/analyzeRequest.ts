@@ -110,7 +110,7 @@ function extractFeatureTerms(signal: string): string[] {
       terms.push(word);
     }
   }
-  return terms;
+  return [...new Set(terms)];
 }
 
 export function analyzeRequest(task: string): RequestAnalysis {

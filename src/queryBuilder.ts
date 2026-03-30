@@ -253,7 +253,16 @@ export function buildQueries(
     if (spec) return makeQueries(spec);
   }
 
-  // 3. Fallback — raw task text as a single broad query.
+  // 3. General OSS path for unknown task type.
+  // Use task-derived featureTerms as a tighter query instead of the raw task
+  // sentence, which typically contains noise words ("add a … to my app").
+  // Capped at 5 terms to keep the query focused.
+  if (analysis.taskType === "unknown" && analysis.featureTerms.length > 0) {
+    const q = analysis.featureTerms.slice(0, 5).join(" ");
+    return { github: [q], npm: [q], all: [q] };
+  }
+
+  // 4. Final fallback — raw task text.
   const fallback = task.slice(0, 80);
   return { github: [fallback], npm: [fallback], all: [fallback] };
 }

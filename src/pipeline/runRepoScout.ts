@@ -55,16 +55,17 @@ function makeDecision(
     const frameworkNote = repo.inspected && repo.framework !== "unknown" && repo.framework !== "none"
       ? ` (queries tailored for ${repo.framework})`
       : "";
-    return {
-      action: "search_oss",
-      rationale: `${TYPE_LABEL[analysis.taskType]} tasks are well-served by OSS libraries.${frameworkNote}`,
-    };
+    // Unknown tasks that reached this point look like borrow-worthy feature
+    // requests but didn't match a known SIGNALS entry — run a general search.
+    const rationale = analysis.taskType === "unknown"
+      ? `Unrecognized feature request — running a general OSS search.${frameworkNote}`
+      : `${TYPE_LABEL[analysis.taskType]} tasks are well-served by OSS libraries.${frameworkNote}`;
+    return { action: "search_oss", rationale };
   }
 
-  // 5. Document_parsing category fallback (handled by classify.ts).
   return {
     action: "skip_oss",
-    rationale: "Task does not match known OSS-solvable patterns.",
+    rationale: "Task does not appear to be an OSS-solvable feature request.",
   };
 }
 
@@ -84,14 +85,18 @@ export async function runRepoScout(task: string): Promise<RepoScoutResult> {
   const classification  = classify(task);      // still used for document_parsing queries
 
   // ── Decision ──────────────────────────────────────────────────────────────
-  // Prefer the richer request analysis; fall back to legacy classify signal.
-  let decision: Decision;
-  if (requestAnalysis.taskType !== "unknown") {
-    decision = makeDecision(requestAnalysis, repoContext);
-  } else if (classification.shouldSearchOss) {
+  // makeDecision now handles all task types, including unknown-but-promising
+  // prompts (likelySolvableByOss: true from analyzeRequest).  The old branch on
+  // taskType !== "unknown" was the hard gate that caused niche OSS-solvable
+  // requests to skip without a search.
+  let decision: Decision = makeDecision(requestAnalysis, repoContext);
+
+  // classify.ts safety net: if makeDecision still skips but classify detected
+  // document-parsing keywords, allow the search.  buildQueries uses the more
+  // precise QUERIES_BY_CATEGORY spec when classification.category is set, so
+  // PDF/OCR requests get better query targeting even on this fallback path.
+  if (decision.action === "skip_oss" && classification.shouldSearchOss) {
     decision = { action: "search_oss", rationale: classification.reason };
-  } else {
-    decision = { action: "skip_oss", rationale: classification.reason };
   }
 
   // ── OSS search (conditional) ──────────────────────────────────────────────

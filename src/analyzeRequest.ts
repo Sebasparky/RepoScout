@@ -132,6 +132,49 @@ const CANONICAL_MAP: Partial<Record<string, CanonicalEntry>> = {
   "sso":            { feature: "auth", extraTerms: ["auth"] },
 };
 
+// ── Internal-task markers ─────────────────────────────────────────────────────
+// Substrings that are strong evidence a prompt is company-internal or custom
+// enough that OSS search won't help.  Keep this list narrow — false negatives
+// (searching when we should skip) are much less harmful than false positives
+// (skipping a real borrow opportunity).
+//
+// The SIGNALS table already catches config_change and business_logic patterns
+// ("our logic", "our business", "custom algorithm", etc.).  These markers cover
+// ownership phrases that escape those entries.
+const INTERNAL_MARKERS: string[] = [
+  "our internal",
+  "our workflow",
+  "our approval",
+  "our company",
+  "company-specific",
+  "company specific",
+  "internal workflow",
+  "internal logic",
+  "proprietary",
+  "in-house",
+];
+
+// Generic action verbs to exclude from task-derived feature terms.
+// They appear in nearly every prompt and carry no signal for package matching.
+const GENERIC_ACTIONS = new Set([
+  "implement", "integrate", "build", "create", "write",
+  "show", "display", "render", "configure", "setup",
+]);
+
+// Extract content words from the full task string for unknown prompts.
+// Uses a lower minimum length (3) than extractFeatureTerms (4) to capture
+// short but meaningful terms like "map", "qr", "pdf", "csv".
+function extractTermsFromTask(task: string): string[] {
+  const terms: string[] = [];
+  for (const raw of task.toLowerCase().split(/[\s\-\/,]+/)) {
+    const w = raw.replace(/[^a-z0-9]/g, "");
+    if (w.length >= 3 && !STOP_WORDS.has(w) && !GENERIC_ACTIONS.has(w)) {
+      terms.push(w);
+    }
+  }
+  return [...new Set(terms)];
+}
+
 // Extract content words from a matched signal phrase for request-driven scoring.
 // Always includes the full phrase; also includes individual words that are
 // content-bearing (not stop words, length >= 4).
@@ -152,13 +195,24 @@ export function analyzeRequest(task: string): RequestAnalysis {
   const match = SIGNALS.find((s) => lower.includes(s.signal));
 
   if (!match) {
+    // No known signal matched.  Determine whether this looks like a borrow-worthy
+    // feature request or a clearly internal/custom task.
+    //
+    // Default: treat as borrow-worthy if we can extract meaningful content terms
+    // and the prompt shows no internal-ownership markers.  This lets niche but
+    // well-served OSS categories (WebRTC, maps, rate limiting, command palettes…)
+    // reach the general search path without expanding SIGNALS.
+    const isInternal = INTERNAL_MARKERS.some((m) => lower.includes(m));
+    const featureTerms = isInternal ? [] : extractTermsFromTask(task);
+
     return {
       taskType: "unknown",
       intent: task.slice(0, 80),
       primarySignal: "",
       canonicalFeature: null,
-      featureTerms: [],
-      likelySolvableByOss: false,
+      featureTerms,
+      // Only set borrow-likely when we have actual terms to search with.
+      likelySolvableByOss: !isInternal && featureTerms.length > 0,
       confidence: "low",
     };
   }

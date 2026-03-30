@@ -12,6 +12,30 @@ Default behavior is silence. Only interrupt the user when decision.action == "su
 
 ---
 
+## Local setup required
+
+This skill is intended to run with a local RepoScout backend.
+
+Before using this skill, make sure:
+
+1. The local backend is running from the RepoScout repo root:
+   ```bash
+   npm run server
+   ```
+
+2. `REPOSCOUT_BACKEND_URL` is set in the environment where Claude Code runs:
+   ```bash
+   export REPOSCOUT_BACKEND_URL=http://localhost:3001
+   ```
+
+3. The backend has `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` set using your own GitHub OAuth app credentials.
+
+In local development, RepoScout may fall back to direct GitHub search when no backend URL is set. In production mode, `REPOSCOUT_BACKEND_URL` is required and RepoScout will fail clearly if it is missing.
+
+See `README.md` for full local setup instructions.
+
+---
+
 ## When to invoke
 
 Run RepoScout **before starting implementation** whenever the task looks like:
@@ -115,3 +139,9 @@ this repository (`src/pipeline/runRepoScout.ts`). It does not duplicate the engi
 `skillEntry.ts` calls `runRepoScout()` directly and maps the result to the output
 contract above. All ranking, confidence gating, and repo inspection logic lives in
 the existing codebase.
+
+GitHub search is routed through a local backend (`src/server/index.ts`) that holds
+your GitHub OAuth App credentials. The skill itself never touches credentials — it
+only calls `http://localhost:3001` (or whatever `REPOSCOUT_BACKEND_URL` is set to).
+This keeps credentials server-side and makes the skill safe to run in any Claude
+Code session without credential exposure.

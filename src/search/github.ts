@@ -114,10 +114,11 @@ function repoToCandidate(repo: GitHubRepo): Candidate {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-// Production enforcement: when REPOSCOUT_PRODUCTION=true the backend URL is
-// required. Silently falling back to direct GitHub search would expose
-// credentials (GITHUB_TOKEN) or use the unauthenticated rate limit on a public
-// shared skill — both unacceptable in production.
+// Backend URL enforcement: when REPOSCOUT_PRODUCTION=true the backend URL is
+// required and the skill fails clearly if it is missing. This is useful when
+// you want to ensure the local backend is always used (e.g. in a shared team
+// setup or CI). In normal local development, omitting REPOSCOUT_PRODUCTION
+// allows a graceful fallback to direct GitHub search via GITHUB_TOKEN.
 function searchOnce(query: string): Promise<Candidate[]> {
   const backendUrl = process.env.REPOSCOUT_BACKEND_URL;
 

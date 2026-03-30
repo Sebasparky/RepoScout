@@ -28,17 +28,16 @@ const MAX_QUERY_LENGTH = 200;
 
 // ── Per-IP rate limiting (in-memory sliding window) ───────────────────────────
 //
-// Lightweight anonymous-abuse protection for a public endpoint.
+// Lightweight protection against runaway requests on the local backend.
 // Limits: RATE_LIMIT_MAX requests per RATE_LIMIT_WINDOW_MS per source IP.
 //
-// Caveat: this is per-process only. If multiple instances run behind a load
-// balancer without sticky sessions, limits are not shared across instances.
-// For this use-case (single small backend), this is intentionally acceptable.
+// This is per-process only and does not need to be shared — the local backend
+// runs as a single process serving only the local skill and CLI.
 //
-// IP is taken from req.socket.remoteAddress. If the server runs behind a
-// trusted reverse proxy, set REPOSCOUT_TRUST_PROXY=true to use the first
-// address in X-Forwarded-For instead (verify your proxy sets this correctly
-// before enabling, as it is user-spoofable otherwise).
+// IP is taken from req.socket.remoteAddress. If you put a reverse proxy in
+// front (e.g. for a team-local deployment), set REPOSCOUT_TRUST_PROXY=true to
+// use the first address in X-Forwarded-For instead (verify your proxy sets
+// this correctly before enabling, as it is user-spoofable otherwise).
 
 const RATE_LIMIT_MAX = 30;
 const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute

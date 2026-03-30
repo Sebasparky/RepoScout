@@ -240,12 +240,16 @@ export function buildQueries(
   const fw = taskFrameworkHint(task) ?? repo.framework;
 
   if (analysis.taskType === "common_infra") {
-    const spec = findSpec(INFRA_QUERIES, analysis.primarySignal, fw);
+    // Prefer canonicalFeature so synonym families (e.g. "login" → "auth") resolve
+    // to the same query entry regardless of how the request was phrased.
+    const signalKey = analysis.canonicalFeature ?? analysis.primarySignal;
+    const spec = findSpec(INFRA_QUERIES, signalKey, fw);
     if (spec) return makeQueries(spec);
   }
 
   if (analysis.taskType === "ui_component") {
-    const spec = findSpec(UI_QUERIES, analysis.primarySignal, fw);
+    const signalKey = analysis.canonicalFeature ?? analysis.primarySignal;
+    const spec = findSpec(UI_QUERIES, signalKey, fw);
     if (spec) return makeQueries(spec);
   }
 

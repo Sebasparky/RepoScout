@@ -100,6 +100,38 @@ const STOP_WORDS = new Set([
   "with", "from", "into", "this", "that", "send", "make",
 ]);
 
+// ── Canonical feature map ─────────────────────────────────────────────────────
+// Maps a signal phrase to a stable canonical feature name + extra search terms.
+//
+// Purpose: different phrasing for the same reusable feature can produce
+// divergent query routes or weaker relevance scores because:
+//   (a) the signal text doesn't contain the query key used in INFRA_QUERIES /
+//       UI_QUERIES (e.g. "login" doesn't contain "auth" → misses auth entries),
+//   (b) the raw signal word doesn't match common package names
+//       (e.g. "authentication" doesn't match "next-auth" by name substring).
+//
+// Signals NOT listed here flow through the normal path unchanged — the system
+// remains general-purpose and is not limited to these named categories.
+
+type CanonicalEntry = { feature: string; extraTerms: string[] };
+
+const CANONICAL_MAP: Partial<Record<string, CanonicalEntry>> = {
+  // Auth synonym family → canonical "auth"
+  // Lets "login", "sign in", etc. hit the INFRA_QUERIES auth entry and score
+  // against auth package names (next-auth, better-auth, clerk…).
+  // Signals already containing "auth" are included to enrich featureTerms.
+  "authentication": { feature: "auth", extraTerms: ["auth"] },
+  "authorisation":  { feature: "auth", extraTerms: ["auth"] },
+  "authorization":  { feature: "auth", extraTerms: ["auth"] },
+  "login":          { feature: "auth", extraTerms: ["auth"] },
+  "sign in":        { feature: "auth", extraTerms: ["auth"] },
+  "sign up":        { feature: "auth", extraTerms: ["auth"] },
+  "signup":         { feature: "auth", extraTerms: ["auth"] },
+  "jwt":            { feature: "auth", extraTerms: ["auth"] },
+  "session":        { feature: "auth", extraTerms: ["auth"] },
+  "sso":            { feature: "auth", extraTerms: ["auth"] },
+};
+
 // Extract content words from a matched signal phrase for request-driven scoring.
 // Always includes the full phrase; also includes individual words that are
 // content-bearing (not stop words, length >= 4).
@@ -124,17 +156,25 @@ export function analyzeRequest(task: string): RequestAnalysis {
       taskType: "unknown",
       intent: task.slice(0, 80),
       primarySignal: "",
+      canonicalFeature: null,
       featureTerms: [],
       likelySolvableByOss: false,
       confidence: "low",
     };
   }
 
+  const canonical = CANONICAL_MAP[match.signal] ?? null;
+  const baseTerms = extractFeatureTerms(match.signal);
+  const featureTerms = canonical
+    ? [...new Set([...baseTerms, ...canonical.extraTerms])]
+    : baseTerms;
+
   return {
     taskType: match.type,
     intent: buildIntent(match.type, match.signal),
     primarySignal: match.signal,
-    featureTerms: extractFeatureTerms(match.signal),
+    canonicalFeature: canonical?.feature ?? null,
+    featureTerms,
     likelySolvableByOss: OSS_TASK_TYPES.includes(match.type),
     confidence: match.confidence,
   };

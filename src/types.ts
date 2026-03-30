@@ -14,6 +14,7 @@ export type RequestAnalysis = {
   taskType: TaskType;
   intent: string;               // one-line summary of what was asked
   primarySignal: string;        // the keyword that drove the classification
+  canonicalFeature: string | null; // stable feature name for synonym families (e.g. "auth")
   featureTerms: string[];       // content words extracted from primarySignal for relevance scoring
   likelySolvableByOss: boolean;
   confidence: "high" | "medium" | "low";

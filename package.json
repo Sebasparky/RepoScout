@@ -6,6 +6,11 @@
     "reposcout": "./dist/cli.js",
     "reposcout-skill": "./dist/skillEntry.js"
   },
+  "files": [
+    "dist/",
+    ".claude/skills/reposcout/",
+    ".env.example"
+  ],
   "scripts": {
     "dev": "tsx src/cli.ts",
     "build": "tsc",

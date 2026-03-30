@@ -114,10 +114,25 @@ function repoToCandidate(repo: GitHubRepo): Candidate {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
+// Production enforcement: when REPOSCOUT_PRODUCTION=true the backend URL is
+// required. Silently falling back to direct GitHub search would expose
+// credentials (GITHUB_TOKEN) or use the unauthenticated rate limit on a public
+// shared skill — both unacceptable in production.
 function searchOnce(query: string): Promise<Candidate[]> {
-  return process.env.REPOSCOUT_BACKEND_URL
-    ? searchViaBackend(query)
-    : searchDirect(query);
+  const backendUrl = process.env.REPOSCOUT_BACKEND_URL;
+
+  if (!backendUrl) {
+    if (process.env.REPOSCOUT_PRODUCTION === "true") {
+      throw new Error(
+        "[reposcout] REPOSCOUT_BACKEND_URL must be set in production mode. " +
+          "Set REPOSCOUT_BACKEND_URL or unset REPOSCOUT_PRODUCTION.",
+      );
+    }
+    // Local dev fallback — direct GitHub path (GITHUB_TOKEN optional).
+    return searchDirect(query);
+  }
+
+  return searchViaBackend(query);
 }
 
 export async function searchGitHub(queries: string[]): Promise<Candidate[]> {

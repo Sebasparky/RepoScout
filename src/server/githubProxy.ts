@@ -10,6 +10,7 @@
  *
  * Nothing in this file should ever be imported by client-side or skill-side code.
  * Credentials are read only from process.env inside this module.
+ * Secrets are never written to logs or returned in responses.
  */
 
 import { TtlCache } from "./cache.js";
@@ -98,8 +99,11 @@ export async function searchRepos(rawQuery: string): Promise<SearchResponse> {
 
   const cached = cache.get(query);
   if (cached) {
+    console.log(`[reposcout-backend] cache:hit query="${query}"`);
     return { ...cached, sourceStatus: "cache_hit", cacheHit: true };
   }
+
+  console.log(`[reposcout-backend] cache:miss query="${query}" — fetching upstream`);
 
   const url =
     `${GITHUB_SEARCH_URL}?q=${encodeURIComponent(query)}` +
@@ -109,19 +113,36 @@ export async function searchRepos(rawQuery: string): Promise<SearchResponse> {
   try {
     res = await fetch(url, { headers: buildAuthHeaders() });
   } catch (err) {
+    // Log full error internally; return sanitized reason to caller (no internal hostnames/stack traces).
+    console.error(
+      `[reposcout-backend] upstream:unreachable query="${query}" error="${err instanceof Error ? err.message : String(err)}"`,
+    );
     return {
       results: [],
       sourceStatus: "unavailable",
       cacheHit: false,
-      degradedReason: `Network error reaching GitHub: ${err instanceof Error ? err.message : String(err)}`,
+      degradedReason: "Network error reaching GitHub",
     };
   }
 
-  const rateLimitRemaining = res.headers.get("x-ratelimit-remaining");
-  const remaining =
-    rateLimitRemaining !== null ? parseInt(rateLimitRemaining, 10) : undefined;
+  // Read all rate-limit headers for logging and response.
+  const rlResource  = res.headers.get("x-ratelimit-resource");
+  const rlLimit     = res.headers.get("x-ratelimit-limit");
+  const rlRemaining = res.headers.get("x-ratelimit-remaining");
+  const rlReset     = res.headers.get("x-ratelimit-reset");
+  const remaining   = rlRemaining !== null ? parseInt(rlRemaining, 10) : undefined;
+
+  console.log(
+    `[reposcout-backend] upstream:response status=${res.status} ` +
+    `rl_resource=${rlResource ?? "-"} rl_limit=${rlLimit ?? "-"} ` +
+    `rl_remaining=${rlRemaining ?? "-"} rl_reset=${rlReset ?? "-"} ` +
+    `query="${query}"`,
+  );
 
   if (res.status === 403 || res.status === 429) {
+    console.warn(
+      `[reposcout-backend] upstream:rate_limited status=${res.status} rl_remaining=${rlRemaining ?? "-"} query="${query}"`,
+    );
     return {
       results: [],
       sourceStatus: "degraded",
@@ -132,6 +153,9 @@ export async function searchRepos(rawQuery: string): Promise<SearchResponse> {
   }
 
   if (!res.ok) {
+    console.error(
+      `[reposcout-backend] upstream:error status=${res.status} query="${query}"`,
+    );
     return {
       results: [],
       sourceStatus: "unavailable",
@@ -143,6 +167,10 @@ export async function searchRepos(rawQuery: string): Promise<SearchResponse> {
 
   const data = (await res.json()) as { items?: GitHubRepo[] };
   const results = (data.items ?? []).map(repoToCandidate);
+
+  console.log(
+    `[reposcout-backend] upstream:ok results=${results.length} rl_remaining=${rlRemaining ?? "-"} query="${query}"`,
+  );
 
   const response: SearchResponse = {
     results,

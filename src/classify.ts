@@ -13,7 +13,7 @@ const SIGNALS: CategorySignal[] = [
       "pdf", "ocr", "document", "parse", "parser", "parsing",
       "extract", "extraction", "text recognition", "optical character",
       "tesseract", "pdfjs", "docx", "word document", "invoice",
-      "receipt", "scan", "scanned", "image to text",
+      "receipt", "scanned", "image to text",
     ],
   },
 ];

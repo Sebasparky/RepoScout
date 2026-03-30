@@ -17,6 +17,8 @@ const SIGNALS: SignalEntry[] = [
   { signal: "button spacing",    type: "config_change", confidence: "high" },
   { signal: "button padding",    type: "config_change", confidence: "high" },
   { signal: "color change",      type: "config_change", confidence: "high" },
+  { signal: "the padding",       type: "config_change", confidence: "medium" },
+  { signal: "the margin",        type: "config_change", confidence: "medium" },
   { signal: "rename",            type: "config_change", confidence: "medium" },
   { signal: "refactor",          type: "config_change", confidence: "medium" },
   { signal: "formatting",        type: "config_change", confidence: "medium" },
@@ -59,6 +61,7 @@ const SIGNALS: SignalEntry[] = [
   { signal: "data grid",         type: "ui_component",  confidence: "high" },
   { signal: "chart component",   type: "ui_component",  confidence: "high" },
   { signal: "chart library",     type: "ui_component",  confidence: "high" },
+  { signal: "chart",             type: "ui_component",  confidence: "medium" },
   { signal: "drag and drop",     type: "ui_component",  confidence: "high" },
   { signal: "color picker",      type: "ui_component",  confidence: "high" },
   { signal: "file dropzone",     type: "ui_component",  confidence: "high" },
@@ -146,6 +149,7 @@ const INTERNAL_MARKERS: string[] = [
   "our workflow",
   "our approval",
   "our company",
+  "our custom",
   "company-specific",
   "company specific",
   "internal workflow",
@@ -162,13 +166,13 @@ const GENERIC_ACTIONS = new Set([
 ]);
 
 // Extract content words from the full task string for unknown prompts.
-// Uses a lower minimum length (3) than extractFeatureTerms (4) to capture
+// Uses a lower minimum length (2) than extractFeatureTerms (4) to capture
 // short but meaningful terms like "map", "qr", "pdf", "csv".
 function extractTermsFromTask(task: string): string[] {
   const terms: string[] = [];
   for (const raw of task.toLowerCase().split(/[\s\-\/,]+/)) {
     const w = raw.replace(/[^a-z0-9]/g, "");
-    if (w.length >= 3 && !STOP_WORDS.has(w) && !GENERIC_ACTIONS.has(w)) {
+    if (w.length >= 2 && !STOP_WORDS.has(w) && !GENERIC_ACTIONS.has(w)) {
       terms.push(w);
     }
   }

@@ -10,8 +10,6 @@
     "dev": "tsx src/cli.ts",
     "build": "tsc",
     "start": "node dist/cli.js",
-    "server": "tsx src/server/index.ts",
-    "server:prod": "node dist/server/index.js",
     "test": "node --require tsx/cjs --test src/__tests__/*.test.ts"
   },
   "engines": {

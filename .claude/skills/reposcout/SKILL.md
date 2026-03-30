@@ -12,27 +12,21 @@ Default behavior is silence. Only interrupt the user when decision.action == "su
 
 ---
 
-## Local setup required
+## Local setup
 
-This skill is intended to run with a local RepoScout backend.
+RepoScout runs as a single local process — no backend server or OAuth app required.
 
-Before using this skill, make sure:
-
-1. The local backend is running from the RepoScout repo root:
+1. Build once from the RepoScout repo root:
    ```bash
-   npm run server
+   npm install && npm run build
    ```
 
-2. `REPOSCOUT_BACKEND_URL` is set in the environment where Claude Code runs:
+2. (Optional) Set `GITHUB_TOKEN` for better authenticated GitHub access and more reliable rate limits:
    ```bash
-   export REPOSCOUT_BACKEND_URL=http://localhost:3001
+   export GITHUB_TOKEN=your_token_here
    ```
 
-3. The backend has `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` set using your own GitHub OAuth app credentials.
-
-In local development, RepoScout may fall back to direct GitHub search when no backend URL is set. In production mode, `REPOSCOUT_BACKEND_URL` is required and RepoScout will fail clearly if it is missing.
-
-See `README.md` for full local setup instructions.
+That's it. See `README.md` for details.
 
 ---
 
@@ -140,8 +134,7 @@ this repository (`src/pipeline/runRepoScout.ts`). It does not duplicate the engi
 contract above. All ranking, confidence gating, and repo inspection logic lives in
 the existing codebase.
 
-GitHub search is routed through a local backend (`src/server/index.ts`) that holds
-your GitHub OAuth App credentials. The skill itself never touches credentials — it
-only calls `http://localhost:3001` (or whatever `REPOSCOUT_BACKEND_URL` is set to).
-This keeps credentials server-side and makes the skill safe to run in any Claude
-Code session without credential exposure.
+GitHub search runs directly from the local RepoScout process (`src/search/github.ts`).
+Results are cached in-process with a 5-minute TTL to avoid redundant API calls.
+If `GITHUB_TOKEN` is set, it is used for authenticated requests; otherwise
+unauthenticated requests are made. No backend server or OAuth app is involved.

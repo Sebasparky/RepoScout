@@ -35,7 +35,8 @@ const SIGNALS: SignalEntry[] = [
   { signal: "sign up",           type: "common_infra",  confidence: "medium" },
   { signal: "signup",            type: "common_infra",  confidence: "medium" },
   { signal: "jwt",               type: "common_infra",  confidence: "high" },
-  { signal: "session",           type: "common_infra",  confidence: "medium" },
+  { signal: "session token",     type: "common_infra",  confidence: "high" },
+  { signal: "user session",      type: "common_infra",  confidence: "medium" },
   { signal: "payment",           type: "common_infra",  confidence: "high" },
   { signal: "stripe",            type: "common_infra",  confidence: "high" },
   { signal: "billing",           type: "common_infra",  confidence: "high" },
@@ -131,7 +132,8 @@ const CANONICAL_MAP: Partial<Record<string, CanonicalEntry>> = {
   "sign up":        { feature: "auth", extraTerms: ["auth"] },
   "signup":         { feature: "auth", extraTerms: ["auth"] },
   "jwt":            { feature: "auth", extraTerms: ["auth"] },
-  "session":        { feature: "auth", extraTerms: ["auth"] },
+  "session token":  { feature: "auth", extraTerms: ["auth"] },
+  "user session":   { feature: "auth", extraTerms: ["auth"] },
   "sso":            { feature: "auth", extraTerms: ["auth"] },
 };
 

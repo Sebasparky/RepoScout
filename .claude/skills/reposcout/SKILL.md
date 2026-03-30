@@ -55,6 +55,7 @@ Run:
 
 ```bash
 !`${CLAUDE_SKILL_DIR}/scripts/run_reposcout.sh "$ARGUMENTS"`
+```
 
 ---
 

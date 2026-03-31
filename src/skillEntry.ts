@@ -11,7 +11,6 @@
  *   node dist/skillEntry.js "<task description>"
  */
 
-import { fileURLToPath } from "node:url";
 import { runRepoScout } from "./pipeline/runRepoScout.js";
 import type { RepoScoutResult, ScoredCandidate } from "./types.js";
 
@@ -154,6 +153,6 @@ async function main(): Promise<void> {
 }
 
 // Only invoke when run directly (not when imported for testing)
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (require.main === module) {
   main();
 }

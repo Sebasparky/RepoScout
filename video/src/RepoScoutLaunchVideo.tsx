@@ -57,11 +57,11 @@ export const RepoScoutLaunchVideo: React.FC = () => {
 
       {/* ── Typing SFX — segment 1: 00:00.00-00:00.20 (frames 0-6) ─────── */}
       {/* Swap video/public/audio/typing.mp4 with your typing audio file.  */}
-      <Sequence from={0} durationInFrames={140} layout="none" premountFor={30}>
+      <Sequence from={0} durationInFrames={21} layout="none" premountFor={30}>
         <Audio
           src={staticFile("audio/typing.mp3")}
           startFrom={0}
-          endAt={140}
+          endAt={21}
           volume={0.8}
         />
       </Sequence>

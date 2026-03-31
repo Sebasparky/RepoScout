@@ -48,3 +48,23 @@ export const TOTAL_FRAMES =
   Object.values(SCENE).reduce((a, b) => a + b, 0) -
   TRANSITION_FRAMES * NUM_TRANSITIONS;
 // = 1125 - 72 = 1053 frames = 35.1s
+
+// ─── Launch video ─────────────────────────────────────────────────────────────
+
+export const LAUNCH_SCENE = {
+  init:    120,   // 4.0s  — pure black terminal: npx reposcout init
+  claude:  150,   // 5.0s  — VS Code / Claude Code UI: /reposcout command
+  results: 195,   // 6.5s  — terminal results: recharts payoff
+  skip:    105,   // 3.5s  — skip: custom business logic
+} as const;
+
+// T1 is longer (cinematic wipe: init → claude, shared black background)
+// T2/T3 are quick slides (terminal pane switches)
+export const LAUNCH_T1_FRAMES = 12;
+export const LAUNCH_T2_FRAMES = 6;
+export const LAUNCH_T3_FRAMES = 6;
+
+export const LAUNCH_TOTAL_FRAMES =
+  Object.values(LAUNCH_SCENE).reduce((a, b) => a + b, 0) -
+  LAUNCH_T1_FRAMES - LAUNCH_T2_FRAMES - LAUNCH_T3_FRAMES;
+// = 570 - 12 - 6 - 6 = 546 frames ≈ 18.2s

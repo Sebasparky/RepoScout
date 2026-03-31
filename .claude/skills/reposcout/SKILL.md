@@ -1,3 +1,10 @@
+---
+name: reposcout
+description: Check for OSS reuse before implementing substantial product features. TRIGGER when: adding auth, charts, editors, uploads, PDF preview, data grids, payments, notifications, or other reusable UI/infrastructure features. DO NOT TRIGGER when: fixing styles, debugging, refactoring, or implementing custom business logic. Returns JSON with surface_oss, continue_direct, or skip_oss.
+metadata:
+  tags: oss, reuse, build-vs-borrow, libraries, preflight
+---
+
 # RepoScout — Build vs Borrow Preflight
 
 ## What this skill does
@@ -14,19 +21,7 @@ Default behavior is silence. Only interrupt the user when decision.action == "su
 
 ## Local setup
 
-RepoScout runs as a single local process — no backend server or OAuth app required.
-
-1. Build once from the RepoScout repo root:
-   ```bash
-   npm install && npm run build
-   ```
-
-2. (Optional) Set `GITHUB_TOKEN` for better authenticated GitHub access and more reliable rate limits:
-   ```bash
-   export GITHUB_TOKEN=your_token_here
-   ```
-
-That's it. See `README.md` for details.
+> See README.md for local build and token setup.
 
 ---
 
@@ -112,18 +107,44 @@ The skill returns a single JSON object to stdout. Stderr is reserved for errors.
 When `alreadyHave` is non-null, the repo already has a dep that covers the request.
 Tell the user to check that library's capabilities before adding another one.
 
+### Null fields
+
+`decision.confidence` is non-null **only** when `action == "surface_oss"`. It is `null` for `continue_direct` and `skip_oss`.
+
+`topCandidates` is always an array. It is `[]` when `action` is `continue_direct` or `skip_oss`.
+
+### Error response
+
+On error the process exits non-zero and writes to **stderr**:
+
+```json
+{"error": "<message>"}
+```
+
+All structured output on success goes to **stdout** only.
+
 ---
 
-## How to use the result
+## Response templates
 
-Use stable response templates with minimal wording variation.
+Use these fixed patterns. Do not paraphrase.
 
-**`surface_oss`** — Only surface when confidence is high and `decision.action == "surface_oss"`.
-Show a short lead sentence, then the top 1–3 candidates. For each candidate include: name, githubUrl, npmUrl, license, stars, and the available why reasons. Close with a short next-step question asking whether to use it, compare options, or continue with a custom implementation.
+**`surface_oss`**
 
-**`continue_direct`** — Say nothing; proceed with implementation.
+```
+Before writing this from scratch — {topCandidates[0].name} looks like a strong fit.
+{why[0]}. License: {license}, {stars} stars.
+→ GitHub: {githubUrl}  npm: {npmUrl}
+Want to use this, compare options, or build custom?
+```
 
-**`skip_oss`** — If `alreadyHave` is non-null, mention it briefly once. Otherwise say nothing and proceed.
+Show top 1–3 candidates. Include name, githubUrl, npmUrl, license, stars, and the first 1–2 why reasons per candidate.
+
+**`continue_direct`** — Silent. Proceed with implementation immediately.
+
+**`skip_oss` when `alreadyHave` is non-null** — Say once: "You already have {alreadyHave} — check its docs before adding another." Then proceed.
+
+**`skip_oss` when `alreadyHave` is null** — Silent. Proceed with implementation immediately.
 
 ---
 

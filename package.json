@@ -3,9 +3,9 @@
   "version": "0.1.1",
   "description": "CLI companion for Claude Code — build-vs-borrow decision support",
   "bin": {
-    "reposcout": "./dist/cli.js",
-    "reposcout-skill": "./dist/skillEntry.js"
+    "reposcout": "dist/cli.js"
   },
+  "license": "MIT",
   "files": [
     "dist/",
     ".claude/skills/reposcout/",

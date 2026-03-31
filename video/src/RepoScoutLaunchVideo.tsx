@@ -1,9 +1,7 @@
 import React from "react";
-import { AbsoluteFill, Audio, Sequence, staticFile } from "remotion";
-import { TransitionSeries, linearTiming } from "@remotion/transitions";
-import { wipe } from "@remotion/transitions/wipe";
-import { slide } from "@remotion/transitions/slide";
-import { interpolate } from "remotion";
+import { AbsoluteFill, Audio, Sequence, staticFile, interpolate } from "remotion";
+import { TransitionSeries, linearTiming, springTiming } from "@remotion/transitions";
+import { fade } from "@remotion/transitions/fade";
 import {
   LAUNCH_SCENE,
   LAUNCH_T1_FRAMES,
@@ -17,11 +15,11 @@ import { SkipLaunchScene } from "./scenes/launch/SkipLaunchScene";
 
 // ─── Audio frame constants ────────────────────────────────────────────────────
 // Global frame where Scene 2 begins (S1 duration minus T1 overlap):
-// 120 - 12 = 108
+// 120 - 18 = 102
 const S2_START = LAUNCH_SCENE.init - LAUNCH_T1_FRAMES;
 
 // Typing segment 2: starts at TYPING_DELAY=22 frames into Scene 2
-const TYPING2_GLOBAL = S2_START + 22; // = 130
+const TYPING2_GLOBAL = S2_START + 22; // = 124
 
 // Instrumental gain ramp: 00:08.18 → frame 245 (8.18 × 30 ≈ 245)
 const MUSIC_LIFT = 245;
@@ -30,7 +28,7 @@ export const RepoScoutLaunchVideo: React.FC = () => {
   return (
     <AbsoluteFill>
       {/* ── Instrumental track ──────────────────────────────────────────── */}
-      {/* Swap video/public/audio/instrumental.mp3 with your track.        */}
+      {/* File: video/public/audio/instrumental.mp3                        */}
       <Audio
         src={staticFile("audio/instrumental.mp3")}
         volume={(f) => {
@@ -39,12 +37,12 @@ export const RepoScoutLaunchVideo: React.FC = () => {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
           });
-          // Duck slightly during first keystroke burst (frames 0-12)
+          // Duck slightly during first keystroke burst (frames 0-14)
           const duck1 = interpolate(f, [0, 2, 10, 14], [0.72, 0.72, 1, 1], {
             extrapolateLeft: "clamp",
             extrapolateRight: "clamp",
           });
-          // Duck slightly during Scene 2 typing (frames 130-159)
+          // Duck slightly during Scene 2 typing
           const duck2 = interpolate(
             f,
             [TYPING2_GLOBAL, TYPING2_GLOBAL + 4, TYPING2_GLOBAL + 28, TYPING2_GLOBAL + 33],
@@ -55,8 +53,8 @@ export const RepoScoutLaunchVideo: React.FC = () => {
         }}
       />
 
-      {/* ── Typing SFX — segment 1: 00:00.00-00:00.20 (frames 0-6) ─────── */}
-      {/* Swap video/public/audio/typing.mp4 with your typing audio file.  */}
+      {/* ── Typing SFX — segment 1: 00:00.00-00:00.70 (frames 0-21) ─────── */}
+      {/* File: video/public/audio/typing.mp3                               */}
       <Sequence from={0} durationInFrames={21} layout="none" premountFor={30}>
         <Audio
           src={staticFile("audio/typing.mp3")}
@@ -88,12 +86,13 @@ export const RepoScoutLaunchVideo: React.FC = () => {
           <InitScene />
         </TransitionSeries.Sequence>
 
-        {/* T1: cinematic wipe — init → Claude.
-            Both share pure black (#000000) so the wipe edge is invisible;
-            the VS Code chrome fades in after the wipe completes. */}
+        {/* T1: spring-eased fade through black — init → Claude.
+            InitScene has black bg (#000000). ClaudeScene's CHROME_DELAY=18
+            matches T1, so ClaudeScene is pure black during the entire crossfade.
+            The VS Code chrome springs in *after* T1 ends: emerges from darkness. */}
         <TransitionSeries.Transition
-          presentation={wipe({ direction: "from-right" })}
-          timing={linearTiming({ durationInFrames: LAUNCH_T1_FRAMES })}
+          presentation={fade()}
+          timing={springTiming({ config: { damping: 200 }, durationInFrames: LAUNCH_T1_FRAMES })}
         />
 
         {/* Scene 2 — /reposcout typed in Claude Code */}
@@ -101,9 +100,11 @@ export const RepoScoutLaunchVideo: React.FC = () => {
           <ClaudeScene />
         </TransitionSeries.Sequence>
 
-        {/* T2: quick slide — Claude → results (terminal output arrives) */}
+        {/* T2: brief fade — Claude → results.
+            Both scenes are dark (#1e1e1e terminal / #0d0d0d), crossdissolve
+            reads as "the output arrived," not a scene change. */}
         <TransitionSeries.Transition
-          presentation={slide({ direction: "from-right" })}
+          presentation={fade()}
           timing={linearTiming({ durationInFrames: LAUNCH_T2_FRAMES })}
         />
 
@@ -112,9 +113,11 @@ export const RepoScoutLaunchVideo: React.FC = () => {
           <MatchScene />
         </TransitionSeries.Sequence>
 
-        {/* T3: quick slide — results → skip (next request / contrast) */}
+        {/* T3: quick fade — results → skip.
+            MatchScene and SkipLaunchScene share the same #0d0d0d terminal
+            background so the crossdissolve feels like a tab/session swap. */}
         <TransitionSeries.Transition
-          presentation={slide({ direction: "from-right" })}
+          presentation={fade()}
           timing={linearTiming({ durationInFrames: LAUNCH_T3_FRAMES })}
         />
 

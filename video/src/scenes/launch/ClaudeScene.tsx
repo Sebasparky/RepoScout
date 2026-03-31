@@ -51,9 +51,11 @@ const CODE: Array<{ indent: number; text: string; color?: string }> = [
 //   frame 62 → "↓ RepoScout checking OSS matches..." appears
 //   frame 75+ → hold
 
-// Frames T1 = 12: wipe completes before chrome appears, so the transition edge
-// is invisible (black-on-black). Chrome fades in after the wipe finishes.
-const CHROME_DELAY = 12;
+// Matches LAUNCH_T1_FRAMES = 18.
+// During the T1 fade transition ClaudeScene is still black (chromeOpacity = 0),
+// so the crossdissolve is invisible (black-on-black).
+// The VS Code chrome springs in after T1 completes: emerges from darkness.
+const CHROME_DELAY = 18;
 
 export const ClaudeScene: React.FC = () => {
   const frame = useCurrentFrame();

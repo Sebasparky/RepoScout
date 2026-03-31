@@ -1,6 +1,6 @@
 {
   "name": "reposcout",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CLI companion for Claude Code — build-vs-borrow decision support",
   "bin": {
     "reposcout": "./dist/cli.js",

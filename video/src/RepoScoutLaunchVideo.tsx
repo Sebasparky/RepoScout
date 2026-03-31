@@ -61,7 +61,7 @@ export const RepoScoutLaunchVideo: React.FC = () => {
         <Audio
           src={staticFile("audio/typing.mp3")}
           startFrom={0}
-          endAt={6}
+          endAt={140}
           volume={0.8}
         />
       </Sequence>
